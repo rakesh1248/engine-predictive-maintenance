@@ -64,8 +64,6 @@ mlflow.set_tracking_uri("file:///dev/null")
 
 # Define Hugging Face details for model download
 hf_username = "{hf_username}"
-model_repo_name = "{model_repo_name}"
-repo_id_model = f"{{hf_username}}/{{model_repo_name}}"
 # Ensure HF_TOKEN is available from environment
 hf_token = "{hf_token}"
 if hf_token:
