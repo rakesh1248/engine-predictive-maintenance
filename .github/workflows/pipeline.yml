@@ -56,3 +56,7 @@ jobs:
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }} # Pass HF_TOKEN as a secret
       run: python scripts/model_deployment.py
+    - name: 4) Run Hugging Face Deployment Script
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }} # Pass HF_TOKEN as a secret
+      run: python scripts/deploy_to_hf_space.py

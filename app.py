@@ -1,65 +1,48 @@
 import streamlit as st
 import pandas as pd
 import joblib
-from huggingface_hub import hf_hub_download, login
-from google.colab import userdata
+from huggingface_hub import snapshot_download
 import os
 
-# 1. Hugging Face Login and Model Loading
-# Retrieve HF_TOKEN from Colab userdata secrets
-# Get HF_TOKEN from Colab userdata secrets
+# --- Model Config --- #
+model_repo_id_app = "rakesh1248/random_forest_engine_condition_classifier"
+model_filename = "random_forest_model.joblib"
 
-
-hf_username = "rakesh1248" # IMPORTANT: Replace with your HF username
-model_name = "random_forest_engine_condition_classifier"
-repo_id = f"{hf_username}/{model_name}"
-model_path_in_repo = "random_forest_model.joblib"
-hf_token = userdata.get('HF_TOKEN')
-if hf_token is None:
-    raise ValueError("HF_TOKEN environment variable not set.")
-
-# Log in to Hugging Face
-login(hf_token)
-# Create a directory to store the downloaded model if it doesn't exist
-model_dir = "./model_cache"
-os.makedirs(model_dir, exist_ok=True)
+model_dir_app = "./model_cache"
+os.makedirs(model_dir_app, exist_ok=True)
 
 @st.cache_resource
-def load_model():
+def load_model_app():
     try:
-        # Download the model file from the Hugging Face Hub
-        local_model_path = hf_hub_download(
-            repo_id=repo_id,
-            filename=model_path_in_repo,
-            repo_type="model",
-            local_dir=model_dir
+        repo_path = snapshot_download(
+            repo_id=model_repo_id_app,
+            local_dir=model_dir_app
         )
-        # Load the model from the local path
-        model = joblib.load(local_model_path)
+
+        model_path = os.path.join(repo_path, model_filename)
+
+        model = joblib.load(model_path)
         return model
+
     except Exception as e:
-        st.error(f"Error loading model from Hugging Face Hub: {e}")
+        st.error(f"Error loading model: {e}")
         st.stop()
 
-loaded_model = load_model()
+loaded_model_app = load_model_app()
 
-# 2. Streamlit Application Layout
+# --- UI --- #
 st.set_page_config(layout="wide")
 st.title("Engine Predictive Maintenance App")
-st.write("Predict whether an engine requires maintenance based on sensor readings.")
 
-# Sidebar for user inputs
 st.sidebar.header("Engine Sensor Readings")
 
-# Input widgets for numerical features
-engine_rpm = st.sidebar.slider("Engine RPM", min_value=60, max_value=2300, value=750)
-lub_oil_pressure = st.sidebar.slider("Lub Oil Pressure (bar/kPa)", min_value=0.0, max_value=8.0, value=3.5, step=0.1)
-fuel_pressure = st.sidebar.slider("Fuel Pressure (bar/kPa)", min_value=0.0, max_value=22.0, value=6.0, step=0.1)
-coolant_pressure = st.sidebar.slider("Coolant Pressure (bar/kPa)", min_value=0.0, max_value=8.0, value=2.0, step=0.1)
-lub_oil_temp = st.sidebar.slider("Lub Oil Temperature (°C)", min_value=70.0, max_value=90.0, value=78.0, step=0.1)
-coolant_temp = st.sidebar.slider("Coolant Temperature (°C)", min_value=60.0, max_value=200.0, value=80.0, step=0.1)
+engine_rpm = st.sidebar.slider("Engine RPM", 60, 2300, 750)
+lub_oil_pressure = st.sidebar.slider("Lub Oil Pressure", 0.0, 8.0, 3.5, 0.1)
+fuel_pressure = st.sidebar.slider("Fuel Pressure", 0.0, 22.0, 6.0, 0.1)
+coolant_pressure = st.sidebar.slider("Coolant Pressure", 0.0, 8.0, 2.0, 0.1)
+lub_oil_temp = st.sidebar.slider("Lub Oil Temperature", 70.0, 90.0, 78.0, 0.1)
+coolant_temp = st.sidebar.slider("Coolant Temperature", 60.0, 200.0, 80.0, 0.1)
 
-# Create a DataFrame from user inputs
 input_data = pd.DataFrame([{
     'Engine rpm': engine_rpm,
     'Lub oil pressure': lub_oil_pressure,
@@ -69,22 +52,16 @@ input_data = pd.DataFrame([{
     'Coolant temp': coolant_temp
 }])
 
-st.subheader("Current Input Parameters:")
 st.write(input_data)
 
-# Prediction button
-if st.button("Predict Engine Condition"):
-    if loaded_model:
-        prediction = loaded_model.predict(input_data)
-        prediction_proba = loaded_model.predict_proba(input_data)
+if st.button("Predict"):
+    prediction = loaded_model_app.predict(input_data)
+    proba = loaded_model_app.predict_proba(input_data)
 
-        st.subheader("Prediction Result:")
-        if prediction[0] == 1:
-            st.error("Engine Condition: Faulty (Maintenance Recommended)")
-        else:
-            st.success("Engine Condition: Normal")
-
-        st.write(f"Confidence (Normal): {prediction_proba[0][0]:.2f}")
-        st.write(f"Confidence (Faulty): {prediction_proba[0][1]:.2f}")
+    if prediction[0] == 1:
+        st.error("Faulty Engine")
     else:
-        st.warning("Model not loaded. Please check the logs for errors.")
+        st.success("Normal Engine")
+
+    st.write(f"Normal: {proba[0][0]:.2f}")
+    st.write(f"Faulty: {proba[0][1]:.2f}")
