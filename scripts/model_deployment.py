@@ -46,7 +46,7 @@ with open(os.path.join(LOCAL_APP_DIR, "Dockerfile"), "w") as f:
     f.write(dockerfile_content)
 print("Dockerfile created.")
 
-# Define app.py content (from cell v0TB-th1fGBM, with dynamic MODEL_REPO_ID and HF_TOKEN handling)
+# Define app.py content
 app_py_content = f"""
 import streamlit as st
 import pandas as pd

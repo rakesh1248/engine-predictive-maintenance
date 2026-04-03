@@ -23,7 +23,6 @@ api.create_repo(repo_id=DATASET_REPO_ID, repo_type="dataset", exist_ok=True)
 print(f"Dataset repository '{DATASET_REPO_ID}' ensured to exist.")
 
 # Optional: Upload a basic 'engine_data.csv' if it doesn't exist already to prime the dataset repo.
-# In a real scenario, this data would come from an external source or be committed manually.
 # This block ensures a base 'engine_data.csv' exists for the pipeline to start.
 try:
     # Check if 'engine_data.csv' exists in the dataset repo
